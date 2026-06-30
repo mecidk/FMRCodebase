@@ -23,17 +23,17 @@ FIELD_READINGS = 10 # Number of field measurements to average for each current s
 
 if __name__ == "__main__":
     # Initialize the power supply and gaussmeter
-    kepco = Kepco(GPIB_channel=1)
-    gaussmeter = Lakeshore425(resource="ASRL1::INSTR")
+    kepco_inst = Kepco(GPIB_channel=1)
+    gaussmeter_inst = Lakeshore425(resource="ASRL1::INSTR")
 
     try:
         # Set the gaussmeter to DC mode and set units, then auto-range
-        gaussmeter.dcMode()
-        gaussmeter.setUnits('T')
-        gaussmeter.autoRange()
+        gaussmeter_inst.dcMode()
+        gaussmeter_inst.setUnits('T')
+        gaussmeter_inst.autoRange()
 
         # Set the Kepco to current mode
-        kepco.currentMode()
+        kepco_inst.currentMode()
 
         # Define the current range for the sweep, max current (16 A) is used here
         current_range = np.linspace(-16, 16, 41)
@@ -41,17 +41,17 @@ if __name__ == "__main__":
         readings = []
 
         print("Ramping to starting current...")
-        kepco.rampCurrent(kepco.measureCurrent(), current_range[0], RAMP_STEP, RAMP_DELAY)
+        kepco_inst.rampCurrent(kepco_inst.measureCurrent(), current_range[0], RAMP_STEP, RAMP_DELAY)
 
         print("Starting current sweep...")
         for current in current_range:
-            kepco.rampCurrent(kepco.measureCurrent(), current, RAMP_STEP, RAMP_DELAY)
+            kepco_inst.rampCurrent(kepco_inst.measureCurrent(), current, RAMP_STEP, RAMP_DELAY)
             time.sleep(SETTLE_TIME)  # Wait for the system to stabilize
 
             # Do numerous readings and average them to reduce noise
             field_readings = []
             for _ in range(FIELD_READINGS):
-                field_readings.append(float(gaussmeter.measureField()))
+                field_readings.append(float(gaussmeter_inst.measureField()))
                 time.sleep(0.1)
 
             field_reading = np.mean(field_readings)
@@ -77,16 +77,16 @@ if __name__ == "__main__":
         # Ramp the current back to 0 A and close the connections
         try:
             print("Ramping current back to 0 A...")
-            kepco.rampCurrent(kepco.measureCurrent(), 0, RAMP_STEP, RAMP_DELAY)
+            kepco_inst.rampCurrent(kepco_inst.measureCurrent(), 0, RAMP_STEP, RAMP_DELAY)
         except Exception as e:
             print(f"WARNING: failed to ramp current to 0 A: {e}")
 
         try:
-            kepco.powerOff()
+            kepco_inst.powerOff()
         except Exception as e:
             print(f"WARNING: failed to close Kepco connection: {e}")
 
         try:
-            gaussmeter.close()
+            gaussmeter_inst.close()
         except Exception as e:
             print(f"WARNING: failed to close gaussmeter connection: {e}")
