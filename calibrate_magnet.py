@@ -19,7 +19,7 @@ SETTLE_TIME = 1.0 # Wait amount in seconds for each current step
 RAMP_STEP = 0.5 # dI per step in Amperes, used for ramping current
 RAMP_DELAY = 0.2 # dT per step in seconds, used for ramping current
 
-GAUSS_READINGS = 10 # Number of field measurements to average for each current step
+FIELD_READINGS = 10 # Number of field measurements to average for each current step
 
 if __name__ == "__main__":
     # Initialize the power supply and gaussmeter
@@ -50,9 +50,9 @@ if __name__ == "__main__":
 
             # Do numerous readings and average them to reduce noise
             field_readings = []
-            for _ in range(GAUSS_READINGS):
+            for _ in range(FIELD_READINGS):
                 field_readings.append(float(gaussmeter.measureField()))
-                time.sleep(0.1) # Wait a bit between readings
+                time.sleep(0.1)
 
             field_reading = np.mean(field_readings)
             readings.append((current, field_reading))
