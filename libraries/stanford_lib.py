@@ -1,5 +1,6 @@
 """
 A library for controlling the Stanford Research Systems SR830 lock-in amplifier.
+It uses GPIB communication via pyvisa.
 
 Author: Mecid Kocyigit
 Editors: 
@@ -45,7 +46,7 @@ class SR830():
         
         self.sr830_instance.timeout = 5000 # Change the default timeout to 5 sec to accommodate longer response times
 
-        self.sr830_instance.write('OUTX 1')  # Required at the beginning of every program
+        self.sr830_instance.write('OUTX 1') # Required at the beginning of every program
         print(self.sr830_instance.query('*IDN?'))  # Query the instrument identification
     
     def query(self, command):
@@ -233,7 +234,7 @@ class SR830():
         # Auto phase. Waits for 10 time constants before returning. 
         # Blocks the lock-in until finished. Do NOT send APHS again before the outputs have settled.
         self.sr830_instance.write('APHS')
-        
+
         settle = 10 * self.timeConstantValue()
         time.sleep(min(max(settle, 1.0), 60.0))  # clamp to [1 s, 60 s]
         print("Auto phase completed.")

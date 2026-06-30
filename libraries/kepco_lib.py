@@ -1,5 +1,6 @@
 """
-A library for controlling the Kepco power supply of the GMW electromagnet via GPIB.
+A library for controlling the Kepco power supply of the GMW electromagnet.
+It uses GPIB communication via pyvisa.
 
 Author: Mecid Kocyigit
 Editors: 
