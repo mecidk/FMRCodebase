@@ -6,7 +6,6 @@ Editors:
 """
 
 import pyvisa
-from pyvisa.constants import StopBits, Parity
 import time
 import numpy as np
 
@@ -29,26 +28,24 @@ class SR830():
     # Low-pass filter slope in dB/oct
     FILTER_SLOPE = [6, 12, 18, 24]
  
-    # Sample rate in Hz (index 14 == external trigger)
+    # Sample rate in Hz (index 14 = external trigger)
     SAMPLE_RATE = [
         0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512
     ]
 
     
-    def __init__(self, COM_port = 8):
-        self.COM_port = COM_port
+    def __init__(self, GPIB_address = 8):
+        self.GPIB_address = GPIB_address
         self.rm = pyvisa.ResourceManager()
-        self.sr830_instance = self.rm.open_resource(f'ASRL{self.COM_port}::INSTR', 
-                                                    read_termination='\r', 
-                                                    write_termination='\n',
-                                                    baud_rate=4800,
-                                                    data_bits=8,
-                                                    stop_bits=StopBits.one,
-                                                    parity=Parity.odd)
+
+        self.sr830_instance = self.rm.open_resource(f'GPIB0::{self.GPIB_address}::INSTR', 
+                                                    read_termination='\n', 
+                                                    write_termination='\n'
+                                                    )
         
-        self.sr830_instance.timeout = 5000 # Change the default timeout to 5 seconds (5000 ms) to accommodate longer response times
-        
-        self.sr830_instance.write('OUTX 0')  # Required at the beginning of every program
+        self.sr830_instance.timeout = 5000 # Change the default timeout to 5 sec to accommodate longer response times
+
+        self.sr830_instance.write('OUTX 1')  # Required at the beginning of every program
         print(self.sr830_instance.query('*IDN?'))  # Query the instrument identification
     
     def query(self, command):
@@ -58,36 +55,44 @@ class SR830():
         self.sr830_instance.write(command)
 
     def reset(self):
-        self.sr830_instance.write('*RST')  # Reset the instrument to default settings
+        # Reset the instrument to default settings
+        self.sr830_instance.write('*RST')
         time.sleep(1)  # Wait for a second to ensure the reset is complete
         print("SR830 has been reset to default settings.")
 
     def close(self):
+        # Close the connection and release the resource manager
         try:
             self.sr830_instance.close()
         finally:
             self.rm.close()
 
     def measure(self):
-        response = self.query('SNAP? 1,2') # Query the X and Y values simultaneously
+        # Query the X and Y values simultaneously
+        response = self.query('SNAP? 1,2')
+
         x_value, y_value = (float(v) for v in response.split(','))
         return np.array([x_value, y_value])
     
-    def measure_r_theta(self):
-        response = self.query('SNAP? 3,4') # Query the R and Theta values simultaneously
+    def measureRTheta(self):
+        # Query the R and Theta values simultaneously
+        response = self.query('SNAP? 3,4')
+
         r_value, theta_value = (float(v) for v in response.split(','))
         return np.array([r_value, theta_value])
     
-    def read_output(self, which='X'):
-        # Used to read a single output value (X, Y, R, or THETA)
+    def outputRead(self, which='X'):
+        # Read a single output value (X, Y, R, or THETA), specified by the 'which' parameter
         codes = {'X': 1, 'Y': 2, 'R': 3, 'THETA': 4}
         code = codes[str(which).upper()]
+
         return float(self.query(f'OUTP? {code}'))
     
     def phaseWrite(self, phase_value):
         # Set the reference phase shift (degrees, -360.00 to 729.99, wrapped to +/-180)
         if not -360.0 <= phase_value <= 729.99:
             raise ValueError("Phase must be between -360.00 and 729.99 degrees.")
+        
         self.sr830_instance.write(f'PHAS {phase_value}')
         print(f"Phase set to {phase_value}.")
  
@@ -98,12 +103,14 @@ class SR830():
     def referenceSourceWrite(self, internal=True):
         # Select internal (True) or external (False) reference
         self.sr830_instance.write(f'FMOD {1 if internal else 0}')
+
         print(f"Reference source set to {'internal' if internal else 'external'}.")
  
     def frequencyWrite(self, frequency_hz):
         # Set internal oscillator frequency in Hz (0.001 to 102000), only allowed when the reference source is internal
         if not 0.001 <= frequency_hz <= 102000:
             raise ValueError("Frequency must be between 0.001 and 102000 Hz.")
+        
         self.sr830_instance.write(f'FREQ {frequency_hz}')
         print(f"Reference frequency set to {frequency_hz} Hz.")
  
@@ -121,20 +128,22 @@ class SR830():
         return int(float(self.query('HARM?')))
  
     def amplitudeWrite(self, amplitude_volts):
-        # Set the internal sine output amplitude in Volts (0.004 to 5.000)
+        # Set the internal sine output amplitude in volts (0.004 to 5.000)
         if not 0.004 <= amplitude_volts <= 5.0:
             raise ValueError("Sine amplitude must be between 0.004 and 5.000 V.")
+        
         self.sr830_instance.write(f'SLVL {amplitude_volts}')
         print(f"Sine output amplitude set to {amplitude_volts} V.")
 
     def amplitudeRead(self):
-        # Query the internal sine output amplitude in Volts
+        # Query the internal sine output amplitude in volts
         return float(self.query('SLVL?'))
     
     def inputConfigWrite(self, config):
-        # Input configuration: 'A', 'A-B', 'I1M' (I 1 MOhm) or 'I100M' (I 100 MOhm)
+        # Input configuration: 'A', 'A-B' (differential), 'I1M' (current input with 1M gain) or 'I100M' (current input with 100M gain)
         mapping = {'A': 0, 'A-B': 1, 'I1M': 2, 'I100M': 3}
         self.sr830_instance.write(f'ISRC {mapping[config.upper()]}')
+
         print(f"Input configuration set to {config}.")
  
     def inputCouplingWrite(self, coupling='AC'):
@@ -151,16 +160,16 @@ class SR830():
         # Set sensitivity by index (0-26). See SENSITIVITY table
         if not 0 <= int(sensitivity_index) <= 26:
             raise ValueError("Sensitivity index must be between 0 and 26.")
+        
         self.sr830_instance.write(f'SENS {int(sensitivity_index)}')
-        print(f"Sensitivity set to index {sensitivity_index} " 
-              f"({self.SENSITIVITY[int(sensitivity_index)]} V).")
+        print(f"Sensitivity set to index {sensitivity_index} ({self.SENSITIVITY[int(sensitivity_index)]} V).")
  
     def sensitivityRead(self):
         # Return the sensitivity index (integer 0-26)
         return int(float(self.query('SENS?')))
  
     def sensitivityValue(self):
-        # Return the full-scale sensitivity in Volts (or Amps for current input)
+        # Return the full-scale sensitivity in volts (or Amps for current input)
         return self.SENSITIVITY[self.sensitivityRead()]
  
     def setSensitivityValue(self, value_volts):
@@ -169,6 +178,7 @@ class SR830():
             if fs >= value_volts:
                 self.sensitivityWrite(index)
                 return index
+            
         # value exceeds full scale of the largest range -> use the largest
         self.sensitivityWrite(len(self.SENSITIVITY) - 1)
         return len(self.SENSITIVITY) - 1
@@ -177,9 +187,9 @@ class SR830():
         # Set time constant by index (0-19). See TIME_CONSTANT table
         if not 0 <= int(time_constant_index) <= 19:
             raise ValueError("Time constant index must be between 0 and 19.")
+        
         self.sr830_instance.write(f'OFLT {int(time_constant_index)}')
-        print(f"Time constant set to index {time_constant_index} "
-              f"({self.TIME_CONSTANT[int(time_constant_index)]} s).")
+        print(f"Time constant set to index {time_constant_index} ({self.TIME_CONSTANT[int(time_constant_index)]} s).")
  
     def timeConstantRead(self):
         # Return the time constant index (integer 0-19)
@@ -199,6 +209,7 @@ class SR830():
         # Reserve mode: 'high', 'normal' or 'low' (low noise)
         mapping = {'HIGH': 0, 'NORMAL': 1, 'LOW': 2}
         self.sr830_instance.write(f'RMOD {mapping[mode.upper()]}')
+
         print(f"Reserve mode set to {mode}.")
  
     def syncFilterWrite(self, on=False):
@@ -209,18 +220,20 @@ class SR830():
     def autoGain(self):
         # Auto gain. Does nothing if the time constant exceeds 1 s. Blocks the lock-in until finished.
         self.sr830_instance.write('AGAN')
-        self._wait_for_idle()
+        self.waitForIdle()
         print("Auto gain completed.")
  
     def autoReserve(self):
         # Auto reserve. Blocks until finished.
         self.sr830_instance.write('ARSV')
-        self._wait_for_idle()
+        self.waitForIdle()
         print("Auto reserve completed.")
  
     def autoPhase(self):
-        # Auto phase. Waits for ~10 time constants before returning. Blocks the lock-in until finished. Do NOT send APHS again before the outputs have settled.
+        # Auto phase. Waits for 10 time constants before returning. 
+        # Blocks the lock-in until finished. Do NOT send APHS again before the outputs have settled.
         self.sr830_instance.write('APHS')
+        
         settle = 10 * self.timeConstantValue()
         time.sleep(min(max(settle, 1.0), 60.0))  # clamp to [1 s, 60 s]
         print("Auto phase completed.")
@@ -231,15 +244,15 @@ class SR830():
         self.sr830_instance.write(f'AOFF {codes[quantity.upper()]}')
         print(f"Auto offset applied to {quantity}.")
 
-    def _wait_for_idle(self, poll=0.05, timeout=30.0):
-        # Block until the 'no command in progress' bit (serial-poll bit 1) is set
-        deadline = time.time() + timeout
+    def waitForIdle(self):
+        # Block until the instrument has finished processing
+        deadline = time.time() + 30.0
         while time.time() < deadline:
-            if int(float(self.query('*STB? 1'))) == 1:
+            if self.sr830_instance.read_stb() & 0b10:  # bit 1 is True when the instrument is idle
                 return
-            time.sleep(poll)
+            time.sleep(0.05)
         raise TimeoutError("Timed out waiting for the SR830 to finish a command.")
  
     def errorStatus(self):
-        # Read and clear the error status byte (decimal 0-255)
+        # Read and clear the error status byte
         return int(float(self.query('ERRS?')))
