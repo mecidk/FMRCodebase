@@ -138,3 +138,8 @@ class Lakeshore425():
         # Reset all configuration values to factory defaults
         self.gauss_instance.write("DFLT 99")
         print("Reset to factory defaults")
+
+    def close(self):
+        # Close the VISA connection to the instrument
+        self.gauss_instance.close()
+        print("Closed connection to gaussmeter.")
