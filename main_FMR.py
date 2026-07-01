@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
         gaussmeter_inst.close()
 
-        mxg_inst.outputWrite(0) # Turn off the output of the signal generator
+        mxg_inst.outputOff() # Turn off the output of the signal generator
         mxg_inst.close()
 
         end_time = time.time()

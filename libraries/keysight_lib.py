@@ -76,10 +76,15 @@ class N5183B():
     def powerRead(self):
         return float(self.query(':POWer:AMPLitude?'))
 
-    def outputWrite(self, on=True):
-        # Turn the RF output on/off
-        self.mxg_instance.write(f':OUTPut:STATe {1 if on else 0}')
-        print(f"RF output {'on' if on else 'off'}.")
+    def outputOn(self):
+        # Turn the RF output on
+        self.mxg_instance.write(':OUTPut:STATe 1')
+        print("RF output on.")
+
+    def outputOff(self):
+        # Turn the RF output off
+        self.mxg_instance.write(':OUTPut:STATe 0')
+        print("RF output off.")
 
     def outputRead(self):
         return bool(int(self.query(':OUTPut:STATe?')))
