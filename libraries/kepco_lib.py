@@ -31,6 +31,15 @@ class Kepco():
 
         print(self.kepco_instance.query('*IDN?'))  # Query the instrument identification
 
+    def close(self):
+        try:
+            self.kepco_instance.write("OUTP OFF") # Turn off the output before closing
+        except Exception as e:
+            print(f"Error while turning off output: {e}")
+        finally:
+            self.kepco_instance.close()
+            self.rm.close()
+        
     def voltageMode(self):
         # Voltage mode: the output voltage is programmed, current is the maximum limit
         self.kepco_instance.write("VOLT 0")
