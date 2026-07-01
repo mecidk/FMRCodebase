@@ -13,14 +13,14 @@ import math
 
 class Kepco():
 
-    def __init__(self, GPIB_channel = 1):
-        self.GPIB_channel = GPIB_channel
+    def __init__(self, GPIB_address = 1):
+        self.GPIB_address = GPIB_address
         self.rm = pyvisa.ResourceManager()
 
         self.voltmode = 0 # Initialize mode flags
         self.currmode = 0
 
-        self.kepco_instance = self.rm.open_resource(f'GPIB0::{self.GPIB_channel}::INSTR', 
+        self.kepco_instance = self.rm.open_resource(f'GPIB0::{self.GPIB_address}::INSTR', 
                                                     read_termination='\n', 
                                                     write_termination='\n')
         

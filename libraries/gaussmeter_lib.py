@@ -12,13 +12,13 @@ import time
 
 class Lakeshore425():
 
-    def __init__(self, resource = "ASRL1::INSTR"):
-        self.resource = resource
+    def __init__(self, COM_address = 3):
+        self.COM_address = COM_address
         self.rm = pyvisa.ResourceManager()
 
         self.mode = "DC" # Initialize mode flag
 
-        self.gauss_instance = self.rm.open_resource(self.resource,
+        self.gauss_instance = self.rm.open_resource(f'ASRL{self.COM_address}::INSTR',
                                             read_termination='\n',
                                             write_termination='\n',
                                             baud_rate=57600,

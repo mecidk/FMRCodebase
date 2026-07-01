@@ -23,8 +23,8 @@ FIELD_READINGS = 10 # Number of field measurements to average for each current s
 
 if __name__ == "__main__":
     # Initialize the power supply and gaussmeter
-    kepco_inst = Kepco(GPIB_channel=1)
-    gaussmeter_inst = Lakeshore425(resource="ASRL1::INSTR")
+    kepco_inst = Kepco(GPIB_address=1)
+    gaussmeter_inst = Lakeshore425(COM_address=3)
 
     try:
         # Set the gaussmeter to DC mode and set units, then auto-range
@@ -32,10 +32,10 @@ if __name__ == "__main__":
         gaussmeter_inst.setUnits('T')
         gaussmeter_inst.autoRange()
 
-        # Set the Kepco to current mode
+        # Set Kepco to current mode
         kepco_inst.currentMode()
 
-        # Define the current range for the sweep, max current (16 A) is used here
+        # Define the current range for sweep, max current (16 A) is used here
         current_range = np.linspace(-16, 16, 41)
 
         readings = []

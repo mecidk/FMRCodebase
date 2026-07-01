@@ -11,7 +11,7 @@ import time
 
 class N5183B():
 
-    def __init__(self, GPIB_address=19):
+    def __init__(self, GPIB_address=3):
         self.GPIB_address = GPIB_address
         self.rm = pyvisa.ResourceManager()
 
