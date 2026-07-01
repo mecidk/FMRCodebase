@@ -100,11 +100,11 @@ class Kepco():
 
         return errors
     
-    def powerOn(self):
+    def outputOn(self):
         # Turn on the output
         self.kepco_instance.write("OUTP ON")
 
-    def powerOff(self):
+    def outputOff(self):
         # Ramp down the current or voltage to zero and then turn off the output
         try:
             if self.currmode == 1:

@@ -14,7 +14,7 @@ import time
 from libraries.kepco_lib import Kepco
 from libraries.gaussmeter_lib import Lakeshore425
 
-SETTLE_TIME = 1.0 # Wait amount in seconds for each current step
+SETTLE_TIME = 1.0 # Wait amount in seconds for each current in the sweep
 
 RAMP_STEP = 0.5 # dI per step in Amperes, used for ramping current
 RAMP_DELAY = 0.2 # dT per step in seconds, used for ramping current
@@ -32,8 +32,9 @@ if __name__ == "__main__":
         gaussmeter_inst.setUnits('T')
         gaussmeter_inst.autoRange()
 
-        # Set Kepco to current mode
+        # Set Kepco to current mode and turn on the output
         kepco_inst.currentMode()
+        kepco_inst.outputOn()
 
         # Define the current range for sweep, max current (16 A) is used here
         current_range = np.linspace(-16, 16, 41)
@@ -47,6 +48,11 @@ if __name__ == "__main__":
         for current in current_range:
             kepco_inst.rampCurrent(kepco_inst.measureCurrent(), current, RAMP_STEP, RAMP_DELAY)
             time.sleep(SETTLE_TIME)  # Wait for the system to stabilize
+
+            # Check if the current has reached the desired value, give an error if not
+            actual_current = kepco_inst.measureCurrent()
+            if abs(actual_current - current) > 0.001:
+                raise RuntimeError("Current did not reach the desired value.")
 
             # Do numerous readings and average them to reduce noise
             field_readings = []
@@ -82,7 +88,7 @@ if __name__ == "__main__":
             print(f"WARNING: failed to ramp current to 0 A: {e}")
 
         try:
-            kepco_inst.powerOff()
+            kepco_inst.outputOff()
         except Exception as e:
             print(f"WARNING: failed to close Kepco connection: {e}")
 
