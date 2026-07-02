@@ -140,6 +140,7 @@ class Lakeshore425():
         print("Reset to factory defaults")
 
     def close(self):
-        # Close the VISA connection to the instrument
-        self.gauss_instance.close()
-        print("Closed connection to gaussmeter.")
+        try:
+            self.gauss_instance.close()
+        finally:
+            self.rm.close()

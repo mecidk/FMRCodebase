@@ -34,10 +34,9 @@ class Kepco():
     def close(self):
         try:
             self.kepco_instance.write("OUTP OFF") # Turn off the output before closing
-        except Exception as e:
-            print(f"Error while turning off output: {e}")
-        finally:
+            time.sleep(0.5)
             self.kepco_instance.close()
+        finally:
             self.rm.close()
         
     def voltageMode(self):
