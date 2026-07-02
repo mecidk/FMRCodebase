@@ -27,7 +27,7 @@ if __name__ == "__main__":
     kepco_inst = Kepco(GPIB_address=1)
     gaussmeter_inst = Lakeshore425(COM_address=3)
 
-    timestamp = time.strftime("%Y%m%d-%H%M%S") # Create a timestamp
+    timestamp = time.strftime("%Y%m%d_%H%M%S") # Create a timestamp
 
     try:
         # Set the gaussmeter to DC mode and set units, then auto-range
@@ -77,14 +77,14 @@ if __name__ == "__main__":
 
         file = open("cal_data/" + filename, "w")
         file.write(f"# Date and Time: {timestamp} #\n")
-        file.write("# Current (A),Field (T)\n")
+        file.write("# Current (A),Field (T) #\n")
         np.savetxt(
-            "cal_data/" + filename,
+            file,
             readings,
-            header="Current (A),Field (T)",
             fmt="%.6f",
             delimiter=",",
         )
+        file.close()
         print(f"Saved readings to {filename}")
 
     finally:
